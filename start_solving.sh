@@ -1,10 +1,9 @@
 #!/bin/bash
-YEAR=$1
-DAY=$2
+DAY=$1
 
 mkdir -p 'day'$DAY
 
-URL='https://adventofcode.com/'$YEAR'/day/'$DAY
+URL='https://adventofcode.com/2022/day/'$DAY
 INPUT_FILE=day$DAY/input.txt
 SOLUTION_FILE=day$DAY/day$DAY.go
 
@@ -27,7 +26,4 @@ cp -i day0/day0.go $SOLUTION_FILE
 # Updates the day in the template
 sed -i -E "s/day0/day$DAY/" $SOLUTION_FILE
 C:/Program/Google/Chrome/Application/chrome.exe $URL
-# code -r $INPUT_FILE $SOLUTION_FILE
-code -r $SOLUTION_FILE
-# cd $YEAR
-# python day$DAY.py
+code -r $SOLUTION_FILE $INPUT_FILE
