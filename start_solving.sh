@@ -1,11 +1,12 @@
 #!/bin/bash
-DAY=$1
+YEAR=$1
+DAY=$2
 
-mkdir -p 'day'$DAY
+mkdir -p $YEAR'/day'$DAY
 
-URL='https://adventofcode.com/2022/day/'$DAY
-INPUT_FILE=day$DAY/input.txt
-SOLUTION_FILE=day$DAY/day$DAY.go
+URL='https://adventofcode.com/'$YEAR'/day/'$DAY
+INPUT_FILE=$YEAR/day$DAY/input.txt
+SOLUTION_FILE=$YEAR/day$DAY/day$DAY.go
 
 max_fails=10
 cur_fails=0
@@ -22,8 +23,9 @@ do
 done
 
 echo "It's ready, start solving!"
-cp -i day0/day0.go $SOLUTION_FILE
-# Updates the day in the template
+cp -i template/template.go $SOLUTION_FILE
+# Updates the year and day in the template
 sed -i -E "s/day0/day$DAY/" $SOLUTION_FILE
+sed -i -E "s/2022/$YEAR/" $SOLUTION_FILE
 C:/Program/Google/Chrome/Application/chrome.exe $URL
 code -r $SOLUTION_FILE $INPUT_FILE

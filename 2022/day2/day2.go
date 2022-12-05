@@ -16,11 +16,11 @@ const (
 type Move int
 
 type Round struct {
-	Count int
-	Byte1 byte
-	Byte2 byte
+	Count    int
+	Byte1    byte
+	Byte2    byte
 	Opponent Move
-	Player Move
+	Player   Move
 }
 
 func (m Move) getWinningMove() Move {
@@ -111,7 +111,7 @@ func stringToStrategy(opponent Move, char byte) Move {
 }
 
 func getInput() []Round {
-	f, err := os.Open("./day2/input.txt")
+	f, err := os.Open("./2022/day2/input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}

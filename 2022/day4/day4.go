@@ -22,7 +22,7 @@ type Pair struct {
 }
 
 func getInput() []Pair {
-	f, err := os.Open("./day4/input.txt")
+	f, err := os.Open("./2022/day4/input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}

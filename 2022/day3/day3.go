@@ -10,7 +10,7 @@ import (
 type Item rune
 
 type Rucksack struct {
-	Count int
+	Count    int
 	Contents string
 }
 
@@ -26,7 +26,7 @@ func (i Item) getPriority() int {
 }
 
 func (r Rucksack) getCompartmentOne() string {
-	return r.Contents[:len(r.Contents)/2]	
+	return r.Contents[:len(r.Contents)/2]
 }
 
 func (r Rucksack) getCompartmentTwo() string {
@@ -65,7 +65,7 @@ func getBadge(r1, r2, r3 Rucksack) Item {
 }
 
 func getInput() []Rucksack {
-	f, err := os.Open("./day3/input.txt")
+	f, err := os.Open("./2022/day3/input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}

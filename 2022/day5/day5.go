@@ -200,7 +200,7 @@ func getTopCrate(crates []Crate, column int) string {
 }
 
 func getInput() ([]int, []Crate, map[int]Move) {
-	f, err := os.Open("./day5/input.txt")
+	f, err := os.Open("./2022/day5/input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}

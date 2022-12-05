@@ -23,7 +23,7 @@ func (e *Elf) getTotalCalories() int {
 }
 
 func getInput() []Elf {
-	f, err := os.Open("./day1/input.txt")
+	f, err := os.Open("./2022/day1/input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
