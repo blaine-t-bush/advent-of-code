@@ -26,7 +26,7 @@ echo "It's ready, start solving!"
 cp -i day0/day0.go $SOLUTION_FILE
 # Updates the day in the template
 sed -i -E "s/day0/day$DAY/" $SOLUTION_FILE
-cmd.exe /C start $URL
+C:/Program/Google/Chrome/Application/chrome.exe $URL
 # code -r $INPUT_FILE $SOLUTION_FILE
 code -r $SOLUTION_FILE
 # cd $YEAR
