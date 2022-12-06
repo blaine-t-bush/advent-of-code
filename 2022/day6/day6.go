@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	util "github.com/blaine-t-bush/advent-of-code-2022/util"
+	util "github.com/blaine-t-bush/advent-of-code/util"
 )
 
 func sliceContainsCharacter(chars []string, check string) bool {
