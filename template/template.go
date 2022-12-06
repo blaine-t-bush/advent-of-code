@@ -1,36 +1,21 @@
 package day0
 
 import (
-	"bufio"
 	"fmt"
-	"log"
-	"os"
+
+	util "github.com/blaine-t-bush/advent-of-code-2022/util"
 )
 
-func getInput() {
-	f, err := os.Open("./2022/day0/input.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-
-	for scanner.Scan() {
-		text := scanner.Text()
-		fmt.Println(text)
-	}
-
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-}
+const (
+	inputFile = "./2022/day0/input.txt"
+)
 
 func SolvePartOne() {
-	getInput()
+	input := util.ReadInput(inputFile)
+	fmt.Println(input)
 }
 
 func SolvePartTwo() {
-	getInput()
+	input := util.ReadInput(inputFile)
+	fmt.Println(input)
 }

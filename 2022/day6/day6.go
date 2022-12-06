@@ -1,34 +1,12 @@
 package day6
 
 import (
-	"bufio"
 	"fmt"
 	"log"
-	"os"
 	"strings"
+
+	util "github.com/blaine-t-bush/advent-of-code-2022/util"
 )
-
-func getInput() string {
-	f, err := os.Open("./2022/day6/input.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-
-	var text string
-	for scanner.Scan() {
-		text = scanner.Text()
-	}
-
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-
-	return text
-}
 
 func sliceContainsCharacter(chars []string, check string) bool {
 	for _, char := range chars {
@@ -70,14 +48,14 @@ func getFirstMarker(text string, uniqueChars int) int {
 }
 
 func SolvePartOne() int {
-	signal := getInput()
+	signal := util.ReadInput("./2022/day6/input.txt")[0]
 	firstStartMarkerIndex := getFirstMarker(signal, 4) + 1
 	fmt.Println(firstStartMarkerIndex)
 	return firstStartMarkerIndex
 }
 
 func SolvePartTwo() int {
-	signal := getInput()
+	signal := util.ReadInput("./2022/day6/input.txt")[0]
 	firstStartMarkerIndex := getFirstMarker(signal, 14) + 1
 	fmt.Println(firstStartMarkerIndex)
 	return firstStartMarkerIndex
