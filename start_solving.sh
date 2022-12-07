@@ -8,6 +8,7 @@ URL='https://adventofcode.com/'$YEAR'/day/'$DAY
 INPUT_FILE=$YEAR/day$DAY/input.txt
 SOLUTION_FILE=$YEAR/day$DAY/day$DAY.go
 
+# Fetch problem input
 max_fails=10
 cur_fails=0
 until $(curl $URL'/input' --config aoc_session --output $INPUT_FILE --silent --fail --retry 10 --retry-delay 5)
@@ -23,9 +24,23 @@ do
 done
 
 echo "It's ready, start solving!"
+# Copy the template solution file
 cp -i template/template.go $SOLUTION_FILE
-# Updates the year and day in the template
+# Update the year and day in the template
 sed -i -E "s/day0/day$DAY/" $SOLUTION_FILE
 sed -i -E "s/2022/$YEAR/" $SOLUTION_FILE
-C:/Program/Google/Chrome/Application/chrome.exe $URL
+# Update main.go
+echo "package main
+
+import (
+	day$DAY \"github.com/blaine-t-bush/advent-of-code/2022/day$DAY\"
+)
+
+func main() {
+	day$DAY.SolvePartOne()
+	day$DAY.SolvePartTwo()
+}
+" > "./main.go"
+# Open problem page
+"C:/Program Files/Google/Chrome/Application/chrome.exe" $URL
 code -r $SOLUTION_FILE $INPUT_FILE
