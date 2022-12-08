@@ -12,10 +12,10 @@ const (
 
 func SolvePartOne() {
 	input := util.ReadInput(inputFile)
-	fmt.Println(input)
+	fmt.Println(len(input))
 }
 
 func SolvePartTwo() {
 	input := util.ReadInput(inputFile)
-	fmt.Println(input)
+	fmt.Println(len(input))
 }
