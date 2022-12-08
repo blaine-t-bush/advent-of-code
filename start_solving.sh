@@ -33,7 +33,7 @@ sed -i -E "s/2022/$YEAR/" $SOLUTION_FILE
 echo "package main
 
 import (
-	day$DAY \"github.com/blaine-t-bush/advent-of-code/2022/day$DAY\"
+	day$DAY \"github.com/blaine-t-bush/advent-of-code/$YEAR/day$DAY\"
 )
 
 func main() {
