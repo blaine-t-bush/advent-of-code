@@ -44,3 +44,35 @@ func MinInts(n1, n2 int) int {
 		return n2
 	}
 }
+
+func MaxInts(n1, n2 int) int {
+	if n1 > n2 {
+		return n1
+	} else {
+		return n2
+	}
+}
+
+func MinIntsSlice(nums []int) int {
+	min := nums[0]
+
+	for _, num := range nums {
+		if num < min {
+			min = num
+		}
+	}
+
+	return min
+}
+
+func MaxIntsSlice(nums []int) int {
+	min := nums[0]
+
+	for _, num := range nums {
+		if num > min {
+			min = num
+		}
+	}
+
+	return min
+}
