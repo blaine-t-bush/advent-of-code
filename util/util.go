@@ -66,13 +66,13 @@ func MinIntsSlice(nums []int) int {
 }
 
 func MaxIntsSlice(nums []int) int {
-	min := nums[0]
+	max := nums[0]
 
 	for _, num := range nums {
-		if num > min {
-			min = num
+		if num > max {
+			max = num
 		}
 	}
 
-	return min
+	return max
 }
