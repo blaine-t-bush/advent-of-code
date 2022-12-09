@@ -202,6 +202,26 @@ func SolvePartOne() {
 		knots: map[int]coord{
 			0: {0, 0},
 			1: {0, 0},
+		},
+		tailVisitedCoords: []coord{
+			{0, 0},
+		},
+	}
+
+	for _, command := range commands {
+		r.move(command.dir, command.steps)
+	}
+
+	fmt.Println(len(r.tailVisitedCoords))
+}
+
+func SolvePartTwo() {
+	input := util.ReadInput(inputFile)
+	commands := parseCommands(input)
+	r := rope{
+		knots: map[int]coord{
+			0: {0, 0},
+			1: {0, 0},
 			2: {0, 0},
 			3: {0, 0},
 			4: {0, 0},
@@ -221,10 +241,4 @@ func SolvePartOne() {
 	}
 
 	fmt.Println(len(r.tailVisitedCoords))
-
-}
-
-func SolvePartTwo() {
-	input := util.ReadInput(inputFile)
-	fmt.Println(len(input))
 }
