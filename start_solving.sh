@@ -7,6 +7,7 @@ mkdir -p $YEAR'/day'$DAY
 URL='https://adventofcode.com/'$YEAR'/day/'$DAY
 INPUT_FILE=$YEAR/day$DAY/input.txt
 SOLUTION_FILE=$YEAR/day$DAY/day$DAY.go
+VIZ_FILE=$YEAR/day$DAY/viz.go
 
 # Fetch problem input
 max_fails=10
@@ -24,11 +25,14 @@ do
 done
 
 echo "It's ready, start solving!"
-# Copy the template solution file
+# Copy the template solution file and visualization file
 cp -i template/template.go $SOLUTION_FILE
-# Update the year and day in the template
+cp -i template/viz.go $VIZ_FILE
+# Update the year and day in the templates
 sed -i -E "s/day0/day$DAY/" $SOLUTION_FILE
+sed -i -E "s/day0/day$DAY/" $VIZ_FILE
 sed -i -E "s/2022/$YEAR/" $SOLUTION_FILE
+sed -i -E "s/2022/$YEAR/" $VIZ_FILE
 # Update main.go
 echo "package main
 
@@ -39,6 +43,7 @@ import (
 func main() {
 	day$DAY.SolvePartOne()
 	day$DAY.SolvePartTwo()
+    // dayDAY.Viz()
 }
 " > "./main.go"
 # Open problem page
