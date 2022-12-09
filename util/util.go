@@ -28,3 +28,19 @@ func ReadInput(filename string) []string {
 
 	return contents
 }
+
+func AbsInt(n int) int {
+	if n < 0 {
+		return -n
+	} else {
+		return n
+	}
+}
+
+func MinInts(n1, n2 int) int {
+	if n1 < n2 {
+		return n1
+	} else {
+		return n2
+	}
+}
