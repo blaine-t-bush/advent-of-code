@@ -11,13 +11,23 @@ import (
 )
 
 const (
-	w = 1080
-	h = 1080
+	fontWidth = 4
+)
+
+var (
+	w = 640
+	h = 640
 )
 
 type Game struct {
-	inited bool
-	op     *ebiten.DrawImageOptions
+	inited  bool
+	started bool
+	op      *ebiten.DrawImageOptions
+}
+
+func (g *Game) updateWindowSize() {
+	w = 640
+	h = 640
 }
 
 func (g *Game) init() {
@@ -25,7 +35,12 @@ func (g *Game) init() {
 		g.inited = true
 	}()
 
+	input := util.ReadInput(inputFile)
+	fmt.Println(len(input))
+
 	g.op = &ebiten.DrawImageOptions{}
+	g.started = false
+	g.updateWindowSize()
 }
 
 func (g *Game) Update() error {
@@ -33,14 +48,24 @@ func (g *Game) Update() error {
 		g.init()
 	}
 
-	input := util.ReadInput(inputFile)
-	fmt.Println(len(input))
+	if !g.started {
+		if ebiten.IsKeyPressed(ebiten.KeySpace) {
+			g.started = true
+		}
+	} else {
+		// do updates
+		return nil
+	}
 
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	ebitenutil.DebugPrint(screen, "Hello, world!")
+	if !g.started {
+		ebitenutil.DebugPrintAt(screen, "press space to start", w/2-len("press space to start")*fontWidth/2, h/2-fontWidth/2)
+	} else {
+		ebitenutil.DebugPrint(screen, "Hello, world!")
+	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
