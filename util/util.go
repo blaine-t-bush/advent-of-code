@@ -29,6 +29,20 @@ func ReadInput(filename string) []string {
 	return contents
 }
 
+// n to the power of m
+func PowInt(n, m int) int {
+	if m == 0 {
+		return 1
+	}
+
+	result := n
+	for i := 2; i <= m; i++ {
+		result *= n
+	}
+
+	return result
+}
+
 func AbsInt(n int) int {
 	if n < 0 {
 		return -n
@@ -75,4 +89,14 @@ func MaxIntsSlice(nums []int) int {
 	}
 
 	return max
+}
+
+func IntInSlice(needle int, haystack []int) bool {
+	for _, num := range haystack {
+		if num == needle {
+			return true
+		}
+	}
+
+	return false
 }
