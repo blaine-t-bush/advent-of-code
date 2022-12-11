@@ -43,7 +43,7 @@ import (
 func main() {
 	day$DAY.SolvePartOne()
 	day$DAY.SolvePartTwo()
-    // dayDAY.Viz()
+    // day$DAY.Viz()
 }
 " > "./main.go"
 # Open problem page

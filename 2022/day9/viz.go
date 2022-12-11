@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	tileSize  = 4
+	tileSize  = 2
 	fontWidth = 5
 )
 

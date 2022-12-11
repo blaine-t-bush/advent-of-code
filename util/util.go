@@ -100,3 +100,14 @@ func IntInSlice(needle int, haystack []int) bool {
 
 	return false
 }
+
+func RemoveIntFromSlice(remove int, nums []int) []int {
+	new := []int{}
+	for _, num := range nums {
+		if num != remove {
+			new = append(new, num)
+		}
+	}
+
+	return new
+}
