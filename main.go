@@ -1,12 +1,12 @@
 package main
 
 import (
-	day7 "github.com/blaine-t-bush/advent-of-code/2020/day7"
+	day14 "github.com/blaine-t-bush/advent-of-code/2022/day14"
 )
 
 func main() {
-	day7.SolvePartOne()
-	day7.SolvePartTwo()
-    // day7.Viz()
+	day14.SolvePartOne()
+	day14.SolvePartTwo()
+    // day14.Viz()
 }
 
