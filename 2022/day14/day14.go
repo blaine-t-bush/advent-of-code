@@ -13,6 +13,8 @@ const (
 	inputFile   = "./2022/day14/input.txt"
 	terrainRock = iota
 	terrainSand
+	extraSpaceLeft  = 1000
+	extraSpaceRight = 1000
 )
 
 type coord struct {
@@ -115,7 +117,7 @@ func fillPaths(paths [][]coord) [][]coord {
 
 func addFloor(rocksAndSand map[coord]int) map[coord]int {
 	minX, maxX, _, maxY := getBounds(rocksAndSand)
-	for x := minX - 1000; x <= maxX+1000; x++ {
+	for x := minX - extraSpaceLeft; x <= maxX+extraSpaceRight; x++ {
 		rocksAndSand[coord{x, maxY + 2}] = terrainRock
 	}
 
