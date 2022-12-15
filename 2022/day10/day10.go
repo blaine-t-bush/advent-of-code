@@ -78,8 +78,8 @@ func runCommands(cmds []command) map[int]int {
 }
 
 func draw(cmds []command) {
-	h = 6
-	w = 40
+	h := 6
+	w := 40
 	// initialize screen
 	screen := make([][]string, h)
 	for i := range screen {
