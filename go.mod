@@ -2,7 +2,10 @@ module github.com/blaine-t-bush/advent-of-code
 
 go 1.18
 
-require github.com/hajimehoshi/ebiten/v2 v2.4.13
+require (
+	github.com/dominikbraun/graph v0.15.0
+	github.com/hajimehoshi/ebiten/v2 v2.4.13
+)
 
 require (
 	github.com/ebitengine/purego v0.0.0-20220905075623-aeed57cda744 // indirect
