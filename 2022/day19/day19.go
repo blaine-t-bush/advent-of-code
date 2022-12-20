@@ -5,15 +5,17 @@ import (
 	"log"
 	"regexp"
 	"strconv"
+	"sync"
 
 	util "github.com/blaine-t-bush/advent-of-code/util"
 	"github.com/dominikbraun/graph"
 )
 
 const (
-	inputFile  = "./2022/day19/example_input.txt"
-	maxMinutes = 24
+	inputFile = "./2022/day19/input.txt"
 )
+
+var maxMinutes int
 
 type oreBot struct {
 	oreCost int
@@ -161,12 +163,30 @@ func buyBot(botType string, s state) (resources, bots) {
 	return s.resources, s.bots
 }
 
-func (s state) qualityLevel() int {
-	return s.blueprint.id * s.resources.geodes
+func (s state) geodeCount() int {
+	return s.resources.geodes
 }
 
 func stateHash(s state) state {
 	return s
+}
+
+func (s1 state) hasMoreOrEqualBots(s2 state) bool {
+	return s1.bots.oreBots >= s2.bots.oreBots && s1.bots.clayBots >= s2.bots.clayBots && s1.bots.obsidianBots >= s2.bots.obsidianBots && s1.bots.geodeBots >= s2.bots.geodeBots
+}
+
+func (s1 state) hasMoreOrEqualResources(s2 state) bool {
+	return s1.resources.ore >= s2.resources.ore && s1.resources.clay >= s2.resources.clay && s1.resources.obsidian >= s2.resources.obsidian && s1.resources.geodes >= s2.resources.geodes
+}
+
+func (s1 state) strictlyWorseThanExistingState(existingStates []state) bool {
+	for _, s2 := range existingStates {
+		if s1.minute >= s2.minute && s2.hasMoreOrEqualBots(s1) && s2.hasMoreOrEqualResources(s1) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func instantiateState(b blueprint) state {
@@ -197,35 +217,64 @@ func instantiateGraph(s state) graph.Graph[state, state] {
 	return g
 }
 
-func expandGraph(current state, g graph.Graph[state, state], finalScores []int) (graph.Graph[state, state], []int) {
+func expandGraph(current state, g graph.Graph[state, state], possibleGeodeCounts []int) (graph.Graph[state, state], []int) {
 	// determine new possible states
 	futureStates, finished := getFutureStates(current)
 
 	// create connections to new states
 	if !finished {
 		for _, futureState := range futureStates {
-			// some optimization. need to cut some corners to shrink graph.
-			// 1. if there are no geodes collected by minute 20,
-			//    this path is likely fruitless
-			if futureState.resources.geodes == 0 && futureState.minute >= 20 {
+			// don't bother with states that have already been searched
+			if _, err := g.Vertex(futureState); err == nil {
 				continue
 			}
+
+			// don't bother with state if there is a strictly better version of it out there
 
 			// add vertices for all future states and edges to them from current state
 			_ = g.AddVertex(futureState)
 			_ = g.AddEdge(stateHash(current), stateHash(futureState))
 
+			// some optimization. need to cut some corners to shrink graph.
+			// 1. if there are no geodes collected by minute 20,
+			//    this path is likely fruitless
+			// 2. if late enough, no point in buying more bots.
+			if futureState.bots.geodeBots == 0 && futureState.minute >= maxMinutes-4 {
+				possibleGeodeCounts = append(possibleGeodeCounts, futureState.geodeCount())
+				continue
+			}
+			if futureState.bots.obsidianBots == 0 && futureState.minute >= maxMinutes-6 {
+				possibleGeodeCounts = append(possibleGeodeCounts, futureState.geodeCount())
+				continue
+			}
+			if futureState.bots.clayBots == 0 && futureState.minute >= maxMinutes-8 {
+				possibleGeodeCounts = append(possibleGeodeCounts, futureState.geodeCount())
+				continue
+			}
+
 			// continue the search if there is time remaining.
 			// otherwise, append the final score for that state.
 			if futureState.minute < maxMinutes {
-				g, finalScores = expandGraph(futureState, g, finalScores)
+				g, possibleGeodeCounts = expandGraph(futureState, g, possibleGeodeCounts)
 			} else {
-				finalScores = append(finalScores, futureState.blueprint.id*futureState.resources.geodes)
+				possibleGeodeCounts = append(possibleGeodeCounts, futureState.geodeCount())
 			}
 		}
 	}
 
-	return g, finalScores
+	return g, possibleGeodeCounts
+}
+
+func (b blueprint) maxOreCost() int {
+	return util.MaxIntsSlice([]int{b.oreBot.oreCost, b.clayBot.oreCost, b.obsidianBot.oreCost, b.geodeBot.oreCost})
+}
+
+func (b blueprint) maxClayCost() int {
+	return b.obsidianBot.clayCost
+}
+
+func (b blueprint) maxObsidianCost() int {
+	return b.geodeBot.obsidianCost
 }
 
 func getFutureStates(s state) ([]state, bool) {
@@ -236,20 +285,27 @@ func getFutureStates(s state) ([]state, bool) {
 	// determine possibly buying options
 	buyOptions := []string{"none"}
 	// optimizations:
-	//   never buy anything in last minute.
+	//   1. never buy anything in last minute.
+	//   2. always buy geode bot if possible.
+	//   3. if have ore bots equal to highest ore cost, no need to buy more ore bots.
+	//      same for clay and obsidian.
+	//   4. rush clay bots by buying ore bots as early as possible until can build a clay bot every minute.
 	if s.minute < maxMinutes {
-		if s.resources.ore >= s.blueprint.oreBot.oreCost {
+		if s.resources.ore >= s.blueprint.oreBot.oreCost && s.bots.oreBots < s.blueprint.maxOreCost() {
 			buyOptions = append(buyOptions, "ore")
 		}
-		if s.resources.ore >= s.blueprint.clayBot.oreCost {
+		if s.resources.ore >= s.blueprint.clayBot.oreCost && s.bots.clayBots < s.blueprint.maxClayCost() {
 			buyOptions = append(buyOptions, "clay")
 		}
-		if s.resources.ore >= s.blueprint.obsidianBot.oreCost && s.resources.clay >= s.blueprint.obsidianBot.clayCost {
+		if s.resources.ore >= s.blueprint.obsidianBot.oreCost && s.resources.clay >= s.blueprint.obsidianBot.clayCost && s.bots.obsidianBots < s.blueprint.maxObsidianCost() {
 			buyOptions = append(buyOptions, "obsidian")
 		}
 		if s.resources.ore >= s.blueprint.geodeBot.oreCost && s.resources.obsidian >= s.blueprint.geodeBot.obsidianCost {
-			buyOptions = append(buyOptions, "geode")
+			buyOptions = []string{"geode"}
 		}
+		// if s.bots.oreBots < s.blueprint.clayBot.oreCost && s.resources.ore >= s.blueprint.oreBot.oreCost {
+		// 	buyOptions = []string{"ore"}
+		// }
 	}
 
 	futureStates := []state{}
@@ -278,25 +334,76 @@ func getFutureStates(s state) ([]state, bool) {
 }
 
 func SolvePartOne() {
+	fmt.Println("solving part one...")
+	maxMinutes = 24
 	input := util.ReadInput(inputFile)
 	blueprints := parseBlueprints(input)
 	qualityLevels := []int{}
-	for _, b := range blueprints {
-		fmt.Printf("analyzing blueprint %d...\n", b.id)
-		s := instantiateState(b)
-		g := instantiateGraph(s)
-		g, finalScores := expandGraph(s, g, []int{})
-		qualityLevel := util.MaxIntsSlice(finalScores)
-		qualityLevels = append(qualityLevels, qualityLevel)
 
-		fmt.Printf("  graph size: %d\n", g.Size())
-		fmt.Printf("  best score: %d\n", qualityLevel)
+	var wg sync.WaitGroup
+	wg.Add(len(blueprints))
+
+	for _, b := range blueprints {
+		go func(b blueprint) {
+			defer wg.Done()
+			fmt.Printf("  blueprint %d starting analysis\n", b.id)
+			s := instantiateState(b)
+			g := instantiateGraph(s)
+			g, possibleGeodeCounts := expandGraph(s, g, []int{})
+			qualityLevel := util.MaxIntsSlice(possibleGeodeCounts) * b.id
+			qualityLevels = append(qualityLevels, qualityLevel)
+
+			fmt.Printf("  blueprint %d graph size: %d\n", b.id, g.Size())
+			fmt.Printf("  blueprint %d best score: %d\n", b.id, qualityLevel)
+		}(b)
 	}
 
-	fmt.Println(qualityLevels)
+	wg.Wait()
+
+	fmt.Printf("  best quality levels: %v\n", qualityLevels)
+
+	sum := 0
+	for _, q := range qualityLevels {
+		sum += q
+	}
+
+	fmt.Printf("  sum of best quality levels: %d\n", sum)
 }
 
 func SolvePartTwo() {
+	fmt.Println()
+	fmt.Println("solving part two...")
+	maxMinutes = 32
 	input := util.ReadInput(inputFile)
-	fmt.Println(len(input))
+	blueprints := parseBlueprints(input)
+	geodeCounts := []int{}
+
+	var wg sync.WaitGroup
+	wg.Add(len(blueprints))
+
+	for _, b := range blueprints {
+		go func(b blueprint) {
+			defer wg.Done()
+			fmt.Printf("  blueprint %d starting analysis\n", b.id)
+			s := instantiateState(b)
+			g := instantiateGraph(s)
+			g, possibleGeodeCounts := expandGraph(s, g, []int{})
+			geodeCount := util.MaxIntsSlice(possibleGeodeCounts)
+			geodeCounts = append(geodeCounts, geodeCount)
+
+			fmt.Printf("  blueprint %d graph size: %d\n", b.id, g.Size())
+			fmt.Printf("  blueprint %d best score: %d\n", b.id, geodeCount)
+		}(b)
+	}
+
+	wg.Wait()
+
+	fmt.Printf("  best geode counts: %v\n", geodeCounts)
+
+	product := 1
+	for _, q := range geodeCounts {
+		product *= q
+	}
+
+	fmt.Printf("  product of best geode counts: %d\n", product)
 }

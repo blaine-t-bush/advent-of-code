@@ -8,4 +8,3 @@ func main() {
 	day19.SolvePartOne()
 	day19.SolvePartTwo()
 }
-
