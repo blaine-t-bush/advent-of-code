@@ -6,13 +6,15 @@ import (
 	"regexp"
 	"strconv"
 	"sync"
+	"time"
 
 	util "github.com/blaine-t-bush/advent-of-code/util"
-	"github.com/dominikbraun/graph"
 )
 
 const (
-	inputFile = "./2022/day19/input.txt"
+	geodeWeight    = 1.0
+	obsidianWeight = 0.1
+	clayWeight     = 0.01
 )
 
 var maxMinutes int
@@ -163,30 +165,29 @@ func buyBot(botType string, s state) (resources, bots) {
 	return s.resources, s.bots
 }
 
-func (s state) geodeCount() int {
-	return s.resources.geodes
+func (s state) heuristic() float64 {
+	return geodeWeight * float64(s.resources.geodes+s.bots.geodeBots*(maxMinutes-s.minute)) // + obsidianWeight*float64(s.resources.obsidian+s.bots.obsidianBots*maxMinutes-s.minute) + clayWeight*float64(s.resources.clay+s.bots.clayBots*maxMinutes-s.minute)
 }
 
-func stateHash(s state) state {
-	return s
+func averageHeuristic(states []state) float64 {
+	sum := 0.0
+	for _, s := range states {
+		sum += s.heuristic()
+	}
+	return sum / float64(len(states))
 }
 
-func (s1 state) hasMoreOrEqualBots(s2 state) bool {
-	return s1.bots.oreBots >= s2.bots.oreBots && s1.bots.clayBots >= s2.bots.clayBots && s1.bots.obsidianBots >= s2.bots.obsidianBots && s1.bots.geodeBots >= s2.bots.geodeBots
-}
-
-func (s1 state) hasMoreOrEqualResources(s2 state) bool {
-	return s1.resources.ore >= s2.resources.ore && s1.resources.clay >= s2.resources.clay && s1.resources.obsidian >= s2.resources.obsidian && s1.resources.geodes >= s2.resources.geodes
-}
-
-func (s1 state) strictlyWorseThanExistingState(existingStates []state) bool {
-	for _, s2 := range existingStates {
-		if s1.minute >= s2.minute && s2.hasMoreOrEqualBots(s1) && s2.hasMoreOrEqualResources(s1) {
-			return true
+func filterStates(states []state) []state {
+	// filter out states that are strictly not better than all other states
+	cutoff := 0.5 * averageHeuristic(states)
+	filtered := []state{}
+	for _, s := range states {
+		if s.heuristic() >= cutoff {
+			filtered = append(filtered, s)
 		}
 	}
 
-	return false
+	return filtered
 }
 
 func instantiateState(b blueprint) state {
@@ -209,60 +210,68 @@ func instantiateState(b blueprint) state {
 	}
 }
 
-func instantiateGraph(s state) graph.Graph[state, state] {
-	// instantiate graph
-	g := graph.New(stateHash, graph.Directed(), graph.Acyclic())
-	_ = g.AddVertex(s)
+func getMaxGeodeCount(start state, minOffset int) int {
+	// for each terminus state in graph (i.e. has no edges from),
+	// get next possible states and add them to graph.
+	// repeat until we have added states up through maxMinutes.
+	terminusStates := []state{start}
+	maxGeodeCount := 0
+	maxExpectedGeodeCount := 0
+	for {
+		// if no more terminus states, we've reached maxMinutes.
+		if len(terminusStates) == 0 {
+			break
+		}
 
-	return g
-}
+		fmt.Printf("  blueprint %d minute %d\n", start.blueprint.id, terminusStates[0].minute)
 
-func expandGraph(current state, g graph.Graph[state, state], possibleGeodeCounts []int) (graph.Graph[state, state], []int) {
-	// determine new possible states
-	futureStates, finished := getFutureStates(current)
+		// for each terminus state, get possible next-minute states.
+		// for each possible next-minute state, add it to list if it's not
+		// strictly worse than a previously-explore state.
+		futureStates := []state{}
+		for _, terminusState := range terminusStates {
+			futureStatesTemp, _ := getFutureStates(terminusState)
+			for _, futureState := range futureStatesTemp {
+				// optimizations:
+				//   1. if at maxMinutes-4 with no geode bots, assume fruitless.
+				//      same for obsidian and clay at -5 and -6 minutes.
 
-	// create connections to new states
-	if !finished {
-		for _, futureState := range futureStates {
-			// don't bother with states that have already been searched
-			if _, err := g.Vertex(futureState); err == nil {
-				continue
+				if futureState.minute >= maxMinutes-minOffset && futureState.bots.geodeBots == 0 {
+					continue
+				}
+				if futureState.minute >= maxMinutes-minOffset-2 && futureState.bots.obsidianBots == 0 {
+					continue
+				}
+				if futureState.minute >= maxMinutes-minOffset-4 && futureState.bots.clayBots == 0 {
+					continue
+				}
+
+				futureStates = append(futureStates, futureState)
+				if futureState.resources.geodes > maxGeodeCount {
+					maxGeodeCount = futureState.resources.geodes
+					fmt.Printf("  blueprint %d current maxGeodeCount %d with state %v\n", start.blueprint.id, maxGeodeCount, futureState)
+				}
+				if futureState.bots.obsidianBots >= futureState.blueprint.maxObsidianCost() {
+					expectedGeodeCount := futureState.resources.geodes
+					for m := futureState.minute + 1; m <= maxMinutes; m++ {
+						expectedGeodeCount += futureState.bots.geodeBots + 1
+					}
+					if expectedGeodeCount > maxExpectedGeodeCount {
+						maxExpectedGeodeCount = expectedGeodeCount
+					}
+					fmt.Printf("  blueprint %d sustaining obsidian engine reached with state %v. expected final geode count %d\n", start.blueprint.id, futureState, expectedGeodeCount)
+				}
 			}
+		}
 
-			// don't bother with state if there is a strictly better version of it out there
-
-			// add vertices for all future states and edges to them from current state
-			_ = g.AddVertex(futureState)
-			_ = g.AddEdge(stateHash(current), stateHash(futureState))
-
-			// some optimization. need to cut some corners to shrink graph.
-			// 1. if there are no geodes collected by minute 20,
-			//    this path is likely fruitless
-			// 2. if late enough, no point in buying more bots.
-			if futureState.bots.geodeBots == 0 && futureState.minute >= maxMinutes-4 {
-				possibleGeodeCounts = append(possibleGeodeCounts, futureState.geodeCount())
-				continue
-			}
-			if futureState.bots.obsidianBots == 0 && futureState.minute >= maxMinutes-6 {
-				possibleGeodeCounts = append(possibleGeodeCounts, futureState.geodeCount())
-				continue
-			}
-			if futureState.bots.clayBots == 0 && futureState.minute >= maxMinutes-8 {
-				possibleGeodeCounts = append(possibleGeodeCounts, futureState.geodeCount())
-				continue
-			}
-
-			// continue the search if there is time remaining.
-			// otherwise, append the final score for that state.
-			if futureState.minute < maxMinutes {
-				g, possibleGeodeCounts = expandGraph(futureState, g, possibleGeodeCounts)
-			} else {
-				possibleGeodeCounts = append(possibleGeodeCounts, futureState.geodeCount())
-			}
+		if len(futureStates) > 0 && futureStates[0].minute >= 20 {
+			terminusStates = filterStates(futureStates)
+		} else {
+			terminusStates = futureStates
 		}
 	}
 
-	return g, possibleGeodeCounts
+	return maxGeodeCount
 }
 
 func (b blueprint) maxOreCost() int {
@@ -289,7 +298,6 @@ func getFutureStates(s state) ([]state, bool) {
 	//   2. always buy geode bot if possible.
 	//   3. if have ore bots equal to highest ore cost, no need to buy more ore bots.
 	//      same for clay and obsidian.
-	//   4. rush clay bots by buying ore bots as early as possible until can build a clay bot every minute.
 	if s.minute < maxMinutes {
 		if s.resources.ore >= s.blueprint.oreBot.oreCost && s.bots.oreBots < s.blueprint.maxOreCost() {
 			buyOptions = append(buyOptions, "ore")
@@ -303,9 +311,6 @@ func getFutureStates(s state) ([]state, bool) {
 		if s.resources.ore >= s.blueprint.geodeBot.oreCost && s.resources.obsidian >= s.blueprint.geodeBot.obsidianCost {
 			buyOptions = []string{"geode"}
 		}
-		// if s.bots.oreBots < s.blueprint.clayBot.oreCost && s.resources.ore >= s.blueprint.oreBot.oreCost {
-		// 	buyOptions = []string{"ore"}
-		// }
 	}
 
 	futureStates := []state{}
@@ -333,7 +338,7 @@ func getFutureStates(s state) ([]state, bool) {
 	return futureStates, false
 }
 
-func SolvePartOne() {
+func SolvePartOne(inputFile string) {
 	fmt.Println("solving part one...")
 	maxMinutes = 24
 	input := util.ReadInput(inputFile)
@@ -348,12 +353,10 @@ func SolvePartOne() {
 			defer wg.Done()
 			fmt.Printf("  blueprint %d starting analysis\n", b.id)
 			s := instantiateState(b)
-			g := instantiateGraph(s)
-			g, possibleGeodeCounts := expandGraph(s, g, []int{})
-			qualityLevel := util.MaxIntsSlice(possibleGeodeCounts) * b.id
+			maxGeodeCount := getMaxGeodeCount(s, 4)
+			qualityLevel := maxGeodeCount * b.id
 			qualityLevels = append(qualityLevels, qualityLevel)
 
-			fmt.Printf("  blueprint %d graph size: %d\n", b.id, g.Size())
 			fmt.Printf("  blueprint %d best score: %d\n", b.id, qualityLevel)
 		}(b)
 	}
@@ -370,7 +373,8 @@ func SolvePartOne() {
 	fmt.Printf("  sum of best quality levels: %d\n", sum)
 }
 
-func SolvePartTwo() {
+func SolvePartTwo(inputFile string) {
+	startTimeUnixMilli := time.Now().UnixMilli()
 	fmt.Println()
 	fmt.Println("solving part two...")
 	maxMinutes = 32
@@ -386,13 +390,10 @@ func SolvePartTwo() {
 			defer wg.Done()
 			fmt.Printf("  blueprint %d starting analysis\n", b.id)
 			s := instantiateState(b)
-			g := instantiateGraph(s)
-			g, possibleGeodeCounts := expandGraph(s, g, []int{})
-			geodeCount := util.MaxIntsSlice(possibleGeodeCounts)
-			geodeCounts = append(geodeCounts, geodeCount)
+			maxGeodeCount := getMaxGeodeCount(s, 4)
+			geodeCounts = append(geodeCounts, maxGeodeCount)
 
-			fmt.Printf("  blueprint %d graph size: %d\n", b.id, g.Size())
-			fmt.Printf("  blueprint %d best score: %d\n", b.id, geodeCount)
+			fmt.Printf("  blueprint %d best score: %d\n", b.id, maxGeodeCount)
 		}(b)
 	}
 
@@ -406,4 +407,5 @@ func SolvePartTwo() {
 	}
 
 	fmt.Printf("  product of best geode counts: %d\n", product)
+	fmt.Printf("runtime: %d milliseconds", time.Now().UnixMilli()-startTimeUnixMilli)
 }
