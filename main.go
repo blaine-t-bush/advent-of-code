@@ -3,22 +3,22 @@ package main
 import (
 	"flag"
 
-	day24 "github.com/blaine-t-bush/advent-of-code/2022/day24"
+	day22 "github.com/blaine-t-bush/advent-of-code/2022/day22"
 )
 
 func main() {
 	// parse command line flags to determine appropriate input file
-	var inputFile string = "./2022/day24/input.txt"
+	var inputFile string = "./2022/day22/input.txt"
 	examplePtr := flag.Bool("ex", false, "use example input instead of real input?")
 	flag.Parse()
 
 	if *examplePtr {
-		inputFile = "./2022/day24/example_input.txt"
+		inputFile = "./2022/day22/example_input.txt"
 	}
 
-	day24.SolvePartOne(inputFile)
-	day24.SolvePartTwo(inputFile)
-	// day24.Viz()
+	day22.SolvePartOne(inputFile)
+	day22.SolvePartTwo(inputFile)
+	// day22.Viz()
 }
 
 

@@ -6,6 +6,7 @@ mkdir -p $YEAR'/day'$DAY
 
 URL='https://adventofcode.com/'$YEAR'/day/'$DAY
 INPUT_FILE=$YEAR/day$DAY/input.txt
+EXAMPLE_FILE=$YEAR/day$DAY/example_input.txt
 SOLUTION_FILE=$YEAR/day$DAY/day$DAY.go
 
 # Fetch problem input
@@ -29,6 +30,8 @@ cp -i template/template.go $SOLUTION_FILE
 # Update the year and day in the templates
 sed -i -E "s/day0/day$DAY/" $SOLUTION_FILE
 sed -i -E "s/2022/$YEAR/" $SOLUTION_FILE
+# Create example input file
+touch $EXAMPLE_FILE
 # Update main.go
 echo "package main
 
@@ -56,4 +59,4 @@ func main() {
 " > "./main.go"
 # Open problem page
 "C:/Program Files/Google/Chrome/Application/chrome.exe" $URL
-code -r $SOLUTION_FILE $INPUT_FILE
+code -r $SOLUTION_FILE $INPUT_FILE $EXAMPLE_FILE
