@@ -15,8 +15,9 @@ const (
 )
 
 var (
-	w = 640
-	h = 640
+	w         = 640
+	h         = 640
+	inputFile string
 )
 
 type Game struct {
@@ -72,9 +73,10 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return w, h
 }
 
-func Viz() {
+func Viz(filename string) {
 	ebiten.SetWindowSize(w, h)
 	ebiten.SetWindowTitle("Advent of Code")
+	inputFile = filename
 	if err := ebiten.RunGame(&Game{}); err != nil {
 		log.Fatal(err)
 	}

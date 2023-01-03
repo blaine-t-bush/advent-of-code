@@ -29,6 +29,15 @@ func ReadInput(filename string) []string {
 	return contents
 }
 
+func SumInts(vals []int) int {
+	sum := 0
+	for _, val := range vals {
+		sum += val
+	}
+
+	return sum
+}
+
 // n to the power of m
 func PowInt(n, m int) int {
 	if m == 0 {

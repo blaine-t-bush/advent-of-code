@@ -33,13 +33,26 @@ sed -i -E "s/2022/$YEAR/" $SOLUTION_FILE
 echo "package main
 
 import (
-	day$DAY \"github.com/blaine-t-bush/advent-of-code/$YEAR/day$DAY\"
+	\"flag\"
+
+	day$DAY \"github.com/blaine-t-bush/advent-of-code/2022/day$DAY\"
 )
 
 func main() {
-	day$DAY.SolvePartOne()
-	day$DAY.SolvePartTwo()
+	// parse command line flags to determine appropriate input file
+	var inputFile string = \"./2022/day$DAY/input.txt\"
+	examplePtr := flag.Bool(\"ex\", false, \"use example input instead of real input?\")
+	flag.Parse()
+
+	if *examplePtr {
+		inputFile = \"./2022/day$DAY/example_input.txt\"
+	}
+
+	day$DAY.SolvePartOne(inputFile)
+	day$DAY.SolvePartTwo(inputFile)
+	// day$DAY.Viz()
 }
+
 " > "./main.go"
 # Open problem page
 "C:/Program Files/Google/Chrome/Application/chrome.exe" $URL
