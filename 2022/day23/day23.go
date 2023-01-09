@@ -165,6 +165,8 @@ func getProposals(elves map[coord]bool, phase int) []proposal {
 			proposed = c.move(dirCycles[dir3].primary, 1)
 		} else if c.elfCount(1, dirCycles[dir4].all, elves) == 0 {
 			proposed = c.move(dirCycles[dir4].primary, 1)
+		} else {
+			continue
 		}
 
 		proposals = append(proposals, proposal{start: c, end: proposed})
@@ -195,7 +197,6 @@ func filterProposals(proposals []proposal) []proposal {
 		for _, end := range filteredEnds {
 			if proposed.end == end {
 				filteredProposals = append(filteredProposals, proposed)
-				break
 			}
 		}
 	}
@@ -204,9 +205,36 @@ func filterProposals(proposals []proposal) []proposal {
 }
 
 func enactProposals(elves map[coord]bool, proposals []proposal) map[coord]bool {
+	originCount := 0
 	for _, proposed := range proposals {
+		if proposed.end.x == 0 && proposed.end.y == 0 {
+			originCount++
+			// fmt.Printf("enactProposals: attempting to move to %v from %v\n", proposed.end, proposed.start)
+		}
+
+		if _, exists := elves[proposed.start]; !exists {
+			fmt.Printf("enactProposals: key to delete does not exist (%v)\n", proposed.start)
+		}
+
+		lengthBeforeDeletion := len(elves)
 		delete(elves, proposed.start)
+		if len(elves) != lengthBeforeDeletion-1 {
+			fmt.Println("enactProposals: delete did not delete entry")
+		}
+
+		if _, exists := elves[proposed.end]; exists {
+			fmt.Printf("enactProposals: key to add already exists (%v)\n", proposed.end)
+		}
+
+		lengthBeforeAddition := len(elves)
 		elves[proposed.end] = true
+		if len(elves) != lengthBeforeAddition+1 {
+			fmt.Println("enactProposals: map[key] did not create entry")
+		}
+	}
+
+	if originCount > 1 {
+		fmt.Printf("enactProposals: number of proposed moves to 0, 0 is %d\n", originCount)
 	}
 
 	return elves
@@ -215,10 +243,10 @@ func enactProposals(elves map[coord]bool, proposals []proposal) map[coord]bool {
 func round(elves map[coord]bool, phase int) (map[coord]bool, bool) {
 	proposals := getProposals(elves, phase)
 	filteredProposals := filterProposals(proposals)
-	elves = enactProposals(elves, filteredProposals)
 	if len(filteredProposals) == 0 {
 		return elves, true
 	} else {
+		elves = enactProposals(elves, filteredProposals)
 		return elves, false
 	}
 }
@@ -296,23 +324,20 @@ func SolvePartOne(inputFile string) {
 func SolvePartTwo(inputFile string) {
 	input := util.ReadInput(inputFile)
 
-	for i := 0; i < 100; i++ {
-		elves := parseMap(input)
-		roundCount := 0
-		var phase int
-		var done bool
-		for {
-			phase = roundCount % 4
-			elves, done = round(elves, phase)
-			if done {
-				break
-			}
+	elves := parseMap(input)
+	roundCount := 0
+	var phase int
+	var done bool
+	for {
+		phase = roundCount % 4
+		elves, done = round(elves, phase)
 
-			roundCount++
+		if done {
+			break
 		}
 
-		fmt.Println(roundCount + 1)
+		roundCount++
 	}
 
-	// answer between 1038 and 1140
+	fmt.Println(roundCount + 1)
 }
