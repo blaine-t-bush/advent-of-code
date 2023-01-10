@@ -8,44 +8,123 @@ import (
 )
 
 const (
-	inputFile = "./2022/day20/example_input.txt"
+	decryptionKey = 811589153
 )
 
-func parseSequenceToList(lines []string) util.List {
-	sequence := util.List{}
-	for i := len(lines) - 1; i >= 0; i-- {
-		num, err := strconv.Atoi(lines[i])
-		util.CheckErr(err)
-		sequence.Insert(num)
-	}
-
-	return sequence
-}
-
-func parseSequenceToSlice(lines []string) []int {
-	sequence := make([]int, len(lines))
+func parse(lines []string) (map[int]*util.Node, util.List, []int) {
+	indicesToNodes := map[int]*util.Node{}
+	list := util.List{}
+	slice := []int{}
 	for i, line := range lines {
 		num, err := strconv.Atoi(line)
 		util.CheckErr(err)
-		sequence[i] = num
+		node := list.Insert(num)
+		slice = append(slice, num)
+		indicesToNodes[i] = node
 	}
 
-	return sequence
+	return indicesToNodes, list, slice
 }
 
-func SolvePartOne() {
-	input := util.ReadInput(inputFile)
-	list := parseSequenceToList(input)
-	slice := parseSequenceToSlice(input)
-	fmt.Println(len(slice))
-	list.Display()
-	list.InsertAt(2, 0)
-	list.Display()
-	list.Delete(4)
-	list.Display()
+func parseAndDecrypt(lines []string) (map[int]*util.Node, util.List, []int) {
+	indicesToNodes := map[int]*util.Node{}
+	list := util.List{}
+	slice := []int{}
+	for i, line := range lines {
+		num, err := strconv.Atoi(line)
+		util.CheckErr(err)
+		num *= decryptionKey
+		node := list.Insert(num)
+		slice = append(slice, num)
+		indicesToNodes[i] = node
+	}
+
+	return indicesToNodes, list, slice
 }
 
-func SolvePartTwo() {
+func SolvePartOne(inputFile string) {
+	fmt.Println("solving part one")
+	// parse inputs
 	input := util.ReadInput(inputFile)
-	fmt.Println(len(input))
+	indicesToNodes, list, slice := parse(input)
+
+	// mix list according to rules
+	for i, num := range slice {
+		list.MoveX(indicesToNodes[i], num)
+	}
+
+	// find node where 0 is and get the 1000th, 2000th, and 3000th numbers after it,
+	// wrapping cyclically
+	var zeroIndex int
+	for i, num := range slice {
+		if num == 0 {
+			zeroIndex = i
+		}
+	}
+
+	current := indicesToNodes[zeroIndex]
+	var coord1, coord2, coord3 int
+	for i := 1; i <= 3000; i++ {
+		current = list.NextCyclic(current)
+		switch i {
+		case 1000:
+			coord1 = current.Key().(int)
+		case 2000:
+			coord2 = current.Key().(int)
+		case 3000:
+			coord3 = current.Key().(int)
+		default:
+			continue
+		}
+	}
+
+	sum := coord1 + coord2 + coord3
+	fmt.Printf("  found grove coordinates %d, %d, %d with sum %d\n", coord1, coord2, coord3, sum)
+}
+
+func SolvePartTwo(inputFile string) {
+	fmt.Println("solving part one")
+	// parse inputs
+	input := util.ReadInput(inputFile)
+	indicesToNodes, list, slice := parseAndDecrypt(input)
+
+	// mix list according to rules
+	length := len(slice)
+	for j := 0; j < 10; j++ {
+		fmt.Printf("  performing mix %d\n", j)
+		for i, num := range slice {
+			// only need to perform the non-cyclic part of moves
+			// that is, subtract all full cycles from the number of steps, then
+			// perform the move with the remainder
+			list.MoveX(indicesToNodes[i], num%(length-1))
+		}
+	}
+
+	// find node where 0 is and get the 1000th, 2000th, and 3000th numbers after it,
+	// wrapping cyclically
+	var zeroIndex int
+	for i, num := range slice {
+		if num == 0 {
+			zeroIndex = i
+		}
+	}
+
+	current := indicesToNodes[zeroIndex]
+	var coord1, coord2, coord3 int
+	for i := 1; i <= 3000; i++ {
+		current = list.NextCyclic(current)
+		switch i {
+		case 1000:
+			coord1 = current.Key().(int)
+		case 2000:
+			coord2 = current.Key().(int)
+		case 3000:
+			coord3 = current.Key().(int)
+		default:
+			continue
+		}
+	}
+
+	sum := coord1 + coord2 + coord3
+	fmt.Printf("  found grove coordinates %d, %d, %d with sum %d\n", coord1, coord2, coord3, sum)
 }
