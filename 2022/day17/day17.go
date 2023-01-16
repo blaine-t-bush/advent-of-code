@@ -3,345 +3,264 @@ package day17
 import (
 	"fmt"
 	"log"
+	"reflect"
 
 	util "github.com/blaine-t-bush/advent-of-code/util"
 )
 
-// rocks spawn in the following order, repeating after the end is reached,
-// with their leftmost edge two spaces away from the left edge of the cave.
-// after spawning, rocks are pushed 1 unit according to the input,
-// then fall one unit, then repeat.
-// 1
-//   ####
-// 2
-//    #
-//   ###
-//    #
-// 3
-//     #
-//     #
-//   ###
-// 4
-//   #
-//   #
-//   #
-//   #
-// 5
-//   ##
-//   ##
-
-const (
-	inputFile = "./2022/day17/input.txt"
-	rockType1 = iota
-	rockType2
-	rockType3
-	rockType4
-	rockType5
-	moveLeft = iota
-	moveRight
-	left  = 0
-	right = 6
-	floor = 0
-)
-
-var (
-	rockTypeCoords = map[int][]coord{
-		rockType1: {
-			{0, 0},
-			{1, 0},
-			{2, 0},
-			{3, 0},
-		},
-		rockType2: {
-			{1, 0},
-			{0, -1},
-			{1, -1},
-			{2, -1},
-			{1, -2},
-		},
-		rockType3: {
-			{2, 0},
-			{2, -1},
-			{0, -2},
-			{1, -2},
-			{2, -2},
-		},
-		rockType4: {
-			{0, 0},
-			{0, -1},
-			{0, -2},
-			{0, -3},
-		},
-		rockType5: {
-			{0, 0},
-			{1, 0},
-			{0, 1},
-			{1, 1},
-		},
-	}
-
-	rockTypeBounds = map[int]bound{
-		rockType1: {
-			top:    getTopmost(rockTypeCoords[rockType1]),
-			right:  getRightmost(rockTypeCoords[rockType1]),
-			bottom: getBottommost(rockTypeCoords[rockType1]),
-			left:   getLeftmost(rockTypeCoords[rockType1]),
-		},
-		rockType2: {
-			top:    getTopmost(rockTypeCoords[rockType2]),
-			right:  getRightmost(rockTypeCoords[rockType2]),
-			bottom: getBottommost(rockTypeCoords[rockType2]),
-			left:   getLeftmost(rockTypeCoords[rockType2]),
-		},
-		rockType3: {
-			top:    getTopmost(rockTypeCoords[rockType3]),
-			right:  getRightmost(rockTypeCoords[rockType3]),
-			bottom: getBottommost(rockTypeCoords[rockType3]),
-			left:   getLeftmost(rockTypeCoords[rockType3]),
-		},
-		rockType4: {
-			top:    getTopmost(rockTypeCoords[rockType4]),
-			right:  getRightmost(rockTypeCoords[rockType4]),
-			bottom: getBottommost(rockTypeCoords[rockType4]),
-			left:   getLeftmost(rockTypeCoords[rockType4]),
-		},
-		rockType5: {
-			top:    getTopmost(rockTypeCoords[rockType5]),
-			right:  getRightmost(rockTypeCoords[rockType5]),
-			bottom: getBottommost(rockTypeCoords[rockType5]),
-			left:   getLeftmost(rockTypeCoords[rockType5]),
-		},
-	}
-)
+// chamber is seven units wide
+// rock spawns with two units between its left edge and the left wall,
+// and three units between its bottom edge and the topmost edge of existing
+// rocks, or floor if no rocks
 
 type coord struct {
 	x int
 	y int
 }
 
-type bound struct {
-	top    int
-	right  int
-	bottom int
-	left   int
-}
+const (
+	dirLeft               = -1
+	dirRight              = 1
+	chamberWidth          = 7
+	spawnHorizontalOffset = 2
+	spawnVerticalOffset   = 3
+	rockCount             = 1000000
+)
 
-type rock struct {
-	rockType int
-	coords   []coord
-	bounds   bound
-	topLeft  coord
-}
-
-func (r rock) height() int {
-	return r.bounds.top - r.bounds.bottom + 1
-}
-
-func addCoords(c1 coord, c2 coord) coord {
-	return coord{c1.x + c2.x, c1.y + c2.y}
-}
-
-func getLeftmost(coords []coord) int {
-	xs := []int{}
-	for _, c := range coords {
-		xs = append(xs, c.x)
-	}
-
-	return util.MinIntsSlice(xs)
-}
-
-func getRightmost(coords []coord) int {
-	xs := []int{}
-	for _, c := range coords {
-		xs = append(xs, c.x)
-	}
-
-	return util.MaxIntsSlice(xs)
-}
-
-func getTopmost(coords []coord) int {
-	ys := []int{}
-	for _, c := range coords {
-		ys = append(ys, c.y)
-	}
-
-	return util.MaxIntsSlice(ys)
-}
-
-func getBottommost(coords []coord) int {
-	ys := []int{}
-	for _, c := range coords {
-		ys = append(ys, c.y)
-	}
-
-	return util.MinIntsSlice(ys)
-}
-
-func spawnRock(rockType int, topmost int) rock {
-	// leftmost point of rock is two from cave left edge.
-	// topmost point of rock is at top of cave.
-	r := rock{
-		rockType: rockType,
-		coords:   rockTypeCoords[rockType],
-		bounds:   rockTypeBounds[rockType],
-	}
-
-	r.topLeft = coord{2, topmost + 3 + r.height()}
-	fmt.Println(r.topLeft)
-
-	return r
-}
-
-func moveRock(r rock, dir int, occupied map[coord]bool) (rock, bool) {
-	// check x movement
-	newX := r.topLeft.x
-	switch dir {
-	case moveLeft:
-		if newX-1 >= left {
-			newX--
-		}
-	case moveRight:
-		if newX+1 <= right {
-			newX++
-		}
-	default:
-		log.Fatal("moveRock: invalid move direction")
-	}
-
-	// check y movement
-	origY := r.topLeft.y
-	newY := r.topLeft.y
-	bottom := r.topLeft.y + r.height()
-	fmt.Println(bottom)
-	if _, exists := occupied[coord{newX, bottom}]; !exists {
-		newY--
-	}
-
-	r.topLeft.x = newX
-	r.topLeft.y = newY
-
-	return r, newY == origY
-}
-
-func parseJets(input string) []int {
-	jets := make([]int, len(input))
-	for i, char := range input {
+func parseJets(line string) []int {
+	jets := []int{}
+	for _, char := range line {
 		switch char {
-		case '>':
-			jets[i] = moveRight
 		case '<':
-			jets[i] = moveLeft
+			jets = append(jets, dirLeft)
+		case '>':
+			jets = append(jets, dirRight)
 		default:
-			log.Fatal("parseJets: could not parse jets")
+			log.Fatal("parseJets: invalid direction")
 		}
 	}
 
 	return jets
 }
 
-func nextJet(jets []int, currentIndex int) (int, int) {
-	if currentIndex+1 >= len(jets) {
-		return jets[0], 0
-	} else {
-		return jets[currentIndex+1], currentIndex + 1
+func initRocks() map[coord]bool {
+	rocks := map[coord]bool{}
+	for x := 0; x < chamberWidth; x++ {
+		rocks[coord{x, 0}] = true
 	}
+	return rocks
 }
 
-func freezeRock(r rock, occupied map[coord]bool) map[coord]bool {
-	coordsToAdd := []coord{}
-	for _, c := range r.coords {
-		coordsToAdd = append(coordsToAdd, addCoords(r.topLeft, c))
-	}
-
-	fmt.Println(coordsToAdd)
-
-	for _, c := range coordsToAdd {
-		if _, exists := occupied[c]; exists {
-			draw(occupied)
-			log.Fatal("freezeRock: coordinate is already occupied")
-		} else {
-			occupied[c] = true
+func topmost(rocks map[coord]bool) int {
+	top := 0
+	for c := range rocks {
+		if c.y > top {
+			top = c.y
 		}
 	}
-
-	return occupied
+	return top
 }
 
-func height(occupied map[coord]bool) int {
-	h := 0
-	for c := range occupied {
-		if c.y > h {
-			h = c.y
-		}
-	}
-
-	return h
-}
-
-func draw(occupied map[coord]bool) {
-	h := height(occupied)
-
-	for y := h; y >= 1; y-- {
-		fmt.Printf("|")
-		for x := left; x <= right; x++ {
-			if _, exists := occupied[coord{x, y}]; exists {
-				fmt.Printf("#")
-			} else {
-				fmt.Printf(".")
-			}
-		}
-		fmt.Printf("|")
-		fmt.Printf("\n")
-	}
-	fmt.Println("+-------+")
-}
-
-func SolvePartOne() {
-	// get jets
-	input := util.ReadInput(inputFile)
-	jets := parseJets(input[0])
-	topmost := floor
-	currentIndex := len(jets)
-	var currentDir, currentRockType int
-	var stopped bool
-	occupied := map[coord]bool{
-		{0, 0}: true,
-		{1, 0}: true,
-		{2, 0}: true,
-		{3, 0}: true,
-		{4, 0}: true,
-		{5, 0}: true,
-		{6, 0}: true,
-	}
-
-	// spawn first rock (topmost begins at floor level)
-
-	for i := 0; i < 10; i++ {
-		currentRockType = (i + 1) % 5
-		r := spawnRock(currentRockType, topmost)
-		fmt.Printf("spawning and moving rock with index %d, type %d, height %d\n", i, currentRockType, r.height())
-
-		for {
-			// get attempted direction
-			currentDir, currentIndex = nextJet(jets, currentIndex)
-
-			// move rock until moveRock returns true
-			r, stopped = moveRock(r, currentDir, occupied)
-
-			if stopped {
-				// update map of coords
-				occupied = freezeRock(r, occupied)
-				topmost = height(occupied)
+func topmostFloor(rocks map[coord]bool) int {
+	top := topmost(rocks)
+	for y := top; y >= 0; y-- {
+		isFloor := true
+		for x := 0; x < chamberWidth; x++ {
+			if _, exists := rocks[coord{x, y}]; !exists {
+				isFloor = false
 				break
 			}
 		}
+
+		if isFloor {
+			return y
+		}
 	}
 
-	fmt.Println(height(occupied))
-	draw(occupied)
+	return 0
 }
 
-func SolvePartTwo() {
+func truncateToTopmostFloor(rocks map[coord]bool) map[coord]bool {
+	truncated := map[coord]bool{}
+	topmostFloor := topmostFloor(rocks)
+	for c := range rocks {
+		if c.y >= topmostFloor {
+			truncated[c] = true
+		}
+	}
+
+	return truncated
+}
+
+func collides(r rock, offset coord, rocks map[coord]bool) bool {
+	for _, c := range r {
+		if _, exists := rocks[coord{c.x + offset.x, c.y + offset.y}]; exists {
+			return true
+		}
+
+		if c.x+offset.x < 0 || c.x+offset.x >= chamberWidth {
+			return true
+		}
+	}
+
+	return false
+}
+
+func getSpawnOffset(rocks map[coord]bool) coord {
+	return coord{spawnHorizontalOffset, topmost(rocks) + spawnVerticalOffset + 1}
+}
+
+func freezeRock(r rock, offset coord, rocks map[coord]bool) map[coord]bool {
+	for _, c := range r {
+		rocks[coord{c.x + offset.x, c.y + offset.y}] = true
+	}
+	return rocks
+}
+
+func moveRock(r rock, offset coord, rocks map[coord]bool, dir int) (coord, bool) {
+	new := offset
+	done := false
+
+	// check if jet movement is allowed
+	withJet := coord{new.x + dir, new.y}
+	if !collides(r, withJet, rocks) {
+		new = withJet
+	}
+
+	// check if gravity movement is allowed
+	withGravity := coord{new.x, new.y - 1}
+	if !collides(r, withGravity, rocks) {
+		new = withGravity
+	} else {
+		// if rock cannot move down, it's in its final spot
+		done = true
+	}
+
+	return new, done
+}
+
+func moveRocks(jets []int, rocks map[coord]bool) map[coord]bool {
+	jetIndex := 0
+	for rockIndex := 0; rockIndex < rockCount; rockIndex++ {
+		// select next rock type
+		var r rock
+		switch rockIndex % 5 {
+		case 0:
+			r = rock1
+		case 1:
+			r = rock2
+		case 2:
+			r = rock3
+		case 3:
+			r = rock4
+		case 4:
+			r = rock5
+		default:
+			log.Fatal("moveRocks: invalid rock phase")
+		}
+
+		// determine rock starting position
+		offset := getSpawnOffset(rocks)
+
+		// get truncated version of current rock structure
+		truncated := truncateToTopmostFloor(rocks)
+
+		// move rock until it stops, advancing the jet index each time
+		done := false
+		for {
+			if jetIndex%10000 == 0 {
+				fmt.Printf("current iteration: %d\n", jetIndex)
+			}
+
+			offset, done = moveRock(r, offset, truncated, jets[jetIndex%len(jets)])
+			jetIndex++
+
+			if done {
+				break
+			}
+		}
+
+		including, excluding := checkForPattern(rocks)
+
+		if including {
+			fmt.Printf("pattern detected, including floor! height %d, rock type %d, iteration %d\n", topmost(rocks), rockIndex%5, jetIndex)
+		}
+
+		if excluding {
+			fmt.Printf("pattern detected, excluding floor! height %d, rock type %d, iteration %d\n", topmost(rocks), rockIndex%5, jetIndex)
+
+		}
+
+		// finally, add rock to map
+		rocks = freezeRock(r, offset, rocks)
+	}
+
+	return rocks
+}
+
+func checkForPattern(rocks map[coord]bool) (bool, bool) {
+	includingFloorEqual := false
+	excludingFloorEqual := false
+	h := topmost(rocks)
+
+	if h%2 != 0 {
+		bottomHalf := map[coord]bool{}
+		topHalf := map[coord]bool{}
+
+		for c := range rocks {
+			if c.y <= (h+1)/2 {
+				bottomHalf[c] = true
+			} else {
+				topHalf[c] = true
+			}
+		}
+
+		includingFloorEqual = reflect.DeepEqual(topHalf, bottomHalf)
+	} else {
+		bottomHalf := map[coord]bool{}
+		topHalf := map[coord]bool{}
+
+		for c := range rocks {
+			if c.y <= h/2 {
+				bottomHalf[c] = true
+			} else {
+				topHalf[c] = true
+			}
+		}
+
+		excludingFloorEqual = reflect.DeepEqual(topHalf, bottomHalf)
+	}
+
+	return includingFloorEqual, excludingFloorEqual
+}
+
+func draw(rocks map[coord]bool) {
+	for y := topmost(rocks); y >= 0; y-- {
+		fmt.Printf("|")
+		for x := 0; x < chamberWidth; x++ {
+			if _, exists := rocks[coord{x, y}]; exists {
+				fmt.Printf("#")
+			} else {
+				fmt.Printf(" ")
+			}
+		}
+		fmt.Printf("|\n")
+	}
+
+	fmt.Println()
+}
+
+func SolvePartOne(inputFile string) {
+	input := util.ReadInput(inputFile)
+	jets := parseJets(input[0])
+	fmt.Printf("jet count: %d\n", len(jets))
+	rocks := initRocks()
+	final := moveRocks(jets, rocks)
+	// draw(final)
+	fmt.Printf("final height: %d\n", topmost(final))
+}
+
+func SolvePartTwo(inputFile string) {
 	input := util.ReadInput(inputFile)
 	fmt.Println(len(input))
 }
