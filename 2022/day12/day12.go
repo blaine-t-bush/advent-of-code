@@ -5,25 +5,23 @@ import (
 	"log"
 
 	util "github.com/blaine-t-bush/advent-of-code/util"
-	"github.com/dominikbraun/graph"
 )
 
 const (
-	searchCount = 100000
+	searchCount = 1000
 	dirNorth    = iota
 	dirEast
 	dirSouth
 	dirWest
 )
 
-var (
-	mapWidth  int
-	mapHeight int
-)
-
 type coord struct {
 	x int
 	y int
+}
+
+func (c coord) transform() util.Coord {
+	return util.Coord{X: c.x, Y: c.y}
 }
 
 func (c coord) translate(dir int, steps int) coord {
@@ -77,134 +75,61 @@ func parseHeightmap(lines []string) (map[coord]int, coord, coord) {
 	return heightmap, start, end
 }
 
-func getMapDimensions(heightmap map[coord]int) (int, int) {
-	minX, minY := 1000000, 1000000
-	maxX, maxY := 0, 0
-	for c := range heightmap {
-		if c.x < minX {
-			minX = c.x
-		}
+func createGraph(heightmap map[coord]int) util.DescendantMap {
+	d := util.DescendantMap{}
 
-		if c.x > maxX {
-			maxX = c.x
-		}
-
-		if c.y < minY {
-			minY = c.y
-		}
-
-		if c.y > maxY {
-			maxY = c.y
-		}
-	}
-
-	return maxX - minX, maxY - minY
-}
-
-func coordHash(c coord) string {
-	return fmt.Sprintf("%d.%d", c.x, c.y)
-}
-
-func coordUnhash(i int) coord {
-	y := i / mapWidth
-	x := i - y
-	return coord{x, y}
-}
-
-func createGraph(heightmap map[coord]int) graph.Graph[string, coord] {
-	g := graph.New(coordHash, graph.Directed())
-
-	// add vertices
-	for c := range heightmap {
-		_ = g.AddVertex(c)
-	}
-
-	// add edges
+	// add vertices and edges
 	dirs := []int{dirNorth, dirEast, dirSouth, dirWest}
 	for c := range heightmap {
 		for _, dir := range dirs {
 			valid, neighbor := c.move(dir, heightmap)
-			if valid {
-				_ = g.AddEdge(coordHash(c), coordHash(neighbor))
+			if valid && len(d[c.transform()]) == 0 {
+				d[c.transform()] = []util.Coord{neighbor.transform()}
+			} else if valid {
+				d[c.transform()] = append(d[c.transform()], neighbor.transform())
 			}
 		}
 	}
 
-	return g
+	return d
 }
 
-func getShortestPath(originalHeightmap map[coord]int, start coord, end coord, cutTop int, cutRight int, cutBottom int, cutLeft int) int {
-	// truncate heightmap
-	heightmap := map[coord]int{}
-	for c, h := range originalHeightmap {
-		if c.x >= cutLeft && c.x <= mapWidth-cutRight && c.y >= cutTop && c.y <= mapHeight-cutBottom {
-			heightmap[c] = h
-		}
-	}
-
-	newWidth, newHeight := getMapDimensions(heightmap)
-	fmt.Printf("  truncated heightmap from %d by %d to %d by %d\n", mapWidth, mapHeight, newWidth, newHeight)
-
-	g := createGraph(heightmap)
-
-	shortestLength := 1000000
-	var path, shortestPath []string
-	fmt.Println("  beginning path searches")
-	for i := 1; i <= searchCount; i++ {
-		path, _ = graph.ShortestPath[string, coord](g, coordHash(start), coordHash(end))
-		length := len(path) - 1
-		if length > 0 && length < shortestLength {
-			shortestPath = path
-			shortestLength = length
-		}
-
-		if i%(searchCount/20) == 0 {
-			fmt.Printf("    performed search %d of %d\n", i, searchCount)
-			fmt.Printf("    current shortest path %d\n", shortestLength)
-		}
-	}
-
-	fmt.Printf("  final shortest path %d\n", shortestLength)
-	fmt.Printf("  path: %v\n", shortestPath)
-	return shortestLength
+func getShortestPath(heightmap map[coord]int, start util.Coord, end util.Coord) int {
+	d := createGraph(heightmap)
+	return int(d.ShortestPath(start, end))
 }
 
 func SolvePartOne(inputFile string) {
+	fmt.Println("Part 1")
 	input := util.ReadInput(inputFile)
-	heightmap, _, _ := parseHeightmap(input)
-	mapWidth, mapHeight = getMapDimensions(heightmap)
-	fmt.Println(heightmap[coord{0, 0}])
+	heightmap, start, end := parseHeightmap(input)
 
-	// define custom start and end so we can test
-	//   0, 20 början
-	//  77, 18 bergspass
-	// 142, 40 söderbacken
-	// 139, 11 bergshalv
-	// 137, 20 bergstopp
-	// cBörjan := coord{0, 20}
-	// cBergspass := coord{77, 18}
-	// cSöderbacken := coord{142, 40}
-	cBergshalv := coord{139, 11}
-	cBergstopp := coord{137, 20}
-
-	// run multiple times
-	// fmt.Println("searching början to bergspass...")
-	// path1 := getShortestPath(heightmap, cBörjan, cBergspass, 17, 84, 7, 0) // 5, 84, 5, 0
-
-	// // fmt.Println("searching bergspass to söderbacken...")
-	// path2 := getShortestPath(heightmap, cBergspass, cSöderbacken, 17, 18, 0, 74) // 15, 10, 0, 77
-
-	// fmt.Println("searching söderbacken to bergshalv...")
-	// path3 := getShortestPath(heightmap, cSöderbacken, cBergshalv, 6, 8, 0, 125) // 0, 0, 0, 125
-
-	fmt.Println("searching bergshalv to bergstopp...")
-	getShortestPath(heightmap, cBergstopp, cBergshalv, 9, 8, 6, 128) // 0, 0, 0, 125
-
-	// fmt.Println()
-	// fmt.Printf("overall shortest path: %d\n", path1+path2+path3+path4)
+	fmt.Printf("Found shortest path with distance %d\n", getShortestPath(heightmap, start.transform(), end.transform()))
 }
 
 func SolvePartTwo(inputFile string) {
+	fmt.Println("Part 2")
 	input := util.ReadInput(inputFile)
-	fmt.Println(len(input))
+	heightmap, _, end := parseHeightmap(input)
+	possibleStarts := []coord{}
+	for c, h := range heightmap {
+		if h == 1 {
+			possibleStarts = append(possibleStarts, c)
+		}
+	}
+
+	var idealStart coord
+	minDistance := 10000000
+	for _, possibleStart := range possibleStarts {
+		distance := getShortestPath(heightmap, possibleStart.transform(), end.transform())
+		if distance != -1 {
+			fmt.Printf("Path from %v has distance %d\n", possibleStart, distance)
+			if distance < minDistance {
+				minDistance = distance
+				idealStart = possibleStart
+			}
+		}
+	}
+
+	fmt.Printf("Shortest path is from %v with distance %d\n", idealStart, minDistance)
 }
