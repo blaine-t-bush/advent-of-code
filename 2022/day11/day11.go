@@ -10,10 +10,6 @@ import (
 	util "github.com/blaine-t-bush/advent-of-code/util"
 )
 
-const (
-	inputFile = "./2022/day11/input.txt"
-)
-
 var (
 	itemsLength = 10
 )
@@ -38,15 +34,19 @@ type monkey struct {
 	inspections int
 }
 
+func (o operation) val() int {
+	val, err := strconv.Atoi(o.value)
+	util.CheckErr(err)
+	return val
+}
+
 func (o operation) perform(old int) int {
 	// get the value
 	var val int
 	if o.value == "old" {
 		val = old
 	} else {
-		var err error
-		val, err = strconv.Atoi(o.value)
-		util.CheckErr(err)
+		val = o.val()
 	}
 
 	// perform the operation
@@ -186,7 +186,7 @@ func parseMonkeyFalse(line string) int {
 	return num
 }
 
-func round(worryDivisor int, monkeys []monkey) []monkey {
+func round(worryDivisor int, monkeys []monkey, multiple int) []monkey {
 	for i, monkey := range monkeys {
 		throws := []throw{} // key: item, value: monkey to throw to
 
@@ -194,11 +194,19 @@ func round(worryDivisor int, monkeys []monkey) []monkey {
 			// calculate worry level
 			worryLevel := monkey.operation.perform(item) / worryDivisor
 
+			// scale worry level down if needed
+			remainder := worryLevel % multiple
+
 			// check condition
 			if worryLevel%monkey.test == 0 {
-				throws = append(throws, throw{value: worryLevel, target: monkey.pos})
+				throws = append(throws, throw{value: remainder, target: monkey.pos})
 			} else {
-				throws = append(throws, throw{value: worryLevel, target: monkey.neg})
+				throws = append(throws, throw{value: remainder, target: monkey.neg})
+			}
+
+			// panic if worryLevel overflows to negative
+			if worryLevel < 0 {
+				log.Fatal("round: worry level overflowed")
 			}
 		}
 
@@ -218,8 +226,15 @@ func round(worryDivisor int, monkeys []monkey) []monkey {
 }
 
 func rounds(worryDivisor int, count int, monkeys []monkey) []monkey {
+	divisors := make([]int, len(monkeys))
+	for i, m := range monkeys {
+		divisors[i] = m.test
+	}
+	multiple := util.LeastMultiple(divisors)
+	fmt.Printf("Product of test divisors: %d\n", multiple)
+
 	for i := 0; i < count; i++ {
-		monkeys = round(worryDivisor, monkeys)
+		monkeys = round(worryDivisor, monkeys, multiple)
 	}
 
 	return monkeys
@@ -234,27 +249,30 @@ func getMonkeyBusiness(monkeys []monkey) int {
 	val1 := util.MaxIntsSlice(inspections)
 	newInspections := util.RemoveIntFromSlice(val1, inspections)
 	val2 := util.MaxIntsSlice(newInspections)
-	fmt.Printf("%d, %d\n", val1, val2)
 
 	return val1 * val2
 }
 
-func SolvePartOne() {
+func SolvePartOne(inputFile string) {
+	fmt.Println("Part 1")
 	input := util.ReadInput(inputFile)
 	monkeys := rounds(3, 20, parseMonkeys(input))
 	for _, monkey := range monkeys {
 		fmt.Printf("Monkey %d inspected items %d times\n", monkey.index, monkey.inspections)
 	}
 
-	fmt.Println(getMonkeyBusiness(monkeys))
+	fmt.Printf("Monkey business score: %d\n", getMonkeyBusiness(monkeys))
+	fmt.Println()
 }
 
-func SolvePartTwo() {
+func SolvePartTwo(inputFile string) {
+	fmt.Println("Part 2")
 	input := util.ReadInput(inputFile)
-	monkeys := rounds(1, 1000, parseMonkeys(input))
+	monkeys := rounds(1, 10000, parseMonkeys(input))
 	for _, monkey := range monkeys {
 		fmt.Printf("Monkey %d inspected items %d times\n", monkey.index, monkey.inspections)
 	}
 
-	fmt.Println(getMonkeyBusiness(monkeys))
+	fmt.Printf("Monkey business score: %d\n", getMonkeyBusiness(monkeys))
+	fmt.Println()
 }

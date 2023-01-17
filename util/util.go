@@ -121,6 +121,39 @@ func RemoveIntFromSlice(remove int, nums []int) []int {
 	return new
 }
 
+func LeastMultiple(nums []int) int {
+	max := 1
+	for _, num := range nums {
+		max *= num
+	}
+
+	for m := 2; m <= max; m++ {
+		isMultiple := true
+		for _, num := range nums {
+			if num%m != 0 {
+				isMultiple = false
+				break
+			}
+		}
+
+		if isMultiple {
+			return m
+		}
+	}
+
+	return max
+}
+
+func AllIntsEqual(nums []int) bool {
+	for _, num := range nums {
+		if num != nums[0] {
+			return false
+		}
+	}
+
+	return true
+}
+
 func RemoveFromSlice[V comparable](remove V, elements []V) []V {
 	new := []V{}
 	for _, element := range elements {
