@@ -38,17 +38,17 @@ echo "package main
 import (
 	\"flag\"
 
-	day$DAY \"github.com/blaine-t-bush/advent-of-code/2022/day$DAY\"
+	day$DAY \"github.com/blaine-t-bush/advent-of-code/$YEAR/day$DAY\"
 )
 
 func main() {
 	// parse command line flags to determine appropriate input file
-	var inputFile string = \"./2022/day$DAY/input.txt\"
+	var inputFile string = \"./$YEAR/day$DAY/input.txt\"
 	examplePtr := flag.Bool(\"ex\", false, \"use example input instead of real input?\")
 	flag.Parse()
 
 	if *examplePtr {
-		inputFile = \"./2022/day$DAY/example_input.txt\"
+		inputFile = \"./$YEAR/day$DAY/example_input.txt\"
 	}
 
 	day$DAY.SolvePartOne(inputFile)

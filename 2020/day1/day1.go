@@ -2,7 +2,6 @@ package day1
 
 import (
 	"fmt"
-	"strconv"
 
 	util "github.com/blaine-t-bush/advent-of-code/util"
 )
@@ -10,17 +9,6 @@ import (
 const (
 	inputFile = "./2020/day1/input.txt"
 )
-
-func convertToInts(lines []string) []int {
-	nums := make([]int, len(lines))
-	for i, line := range lines {
-		num, err := strconv.Atoi(line)
-		util.CheckErr(err)
-		nums[i] = num
-	}
-
-	return nums
-}
 
 func calcProduct(nums []int) int {
 	var product int
@@ -52,12 +40,12 @@ func calcProductPartTwo(nums []int) int {
 
 func SolvePartOne() {
 	input := util.ReadInput(inputFile)
-	nums := convertToInts(input)
+	nums := util.StringsToInts(input)
 	fmt.Println(calcProduct(nums))
 }
 
 func SolvePartTwo() {
 	input := util.ReadInput(inputFile)
-	nums := convertToInts(input)
+	nums := util.StringsToInts(input)
 	fmt.Println(calcProductPartTwo(nums))
 }

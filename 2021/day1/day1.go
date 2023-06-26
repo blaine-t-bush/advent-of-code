@@ -11,22 +11,6 @@ const (
 	inputFile = "./2021/day1/input.txt"
 )
 
-type window struct {
-	lines []int
-	sum   int
-}
-
-func stringsToInts(strings []string) []int {
-	ints := make([]int, len(strings))
-	for i, str := range strings {
-		num, err := strconv.Atoi(str)
-		util.CheckErr(err)
-		ints[i] = num
-	}
-
-	return ints
-}
-
 func countIncreases(nums []int) int {
 	count := 0
 	var previousNum int
@@ -58,7 +42,7 @@ func stringsToWindows(strings []string) []int {
 
 func SolvePartOne() {
 	input := util.ReadInput(inputFile)
-	fmt.Println(countIncreases(stringsToInts(input)))
+	fmt.Println(countIncreases(util.StringsToInts(input)))
 }
 
 func SolvePartTwo() {

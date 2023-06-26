@@ -3,8 +3,8 @@ module github.com/blaine-t-bush/advent-of-code
 go 1.18
 
 require (
-	github.com/dominikbraun/graph v0.15.0
 	github.com/hajimehoshi/ebiten/v2 v2.4.13
+	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
 )
 
 require (
@@ -12,8 +12,8 @@ require (
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220806181222-55e207c401ad // indirect
 	github.com/hajimehoshi/file2byteslice v0.0.0-20210813153925-5340248a8f41 // indirect
 	github.com/jezek/xgb v1.0.1 // indirect
-	golang.org/x/exp v0.0.0-20190731235908-ec7cb31e5a56 // indirect
+	golang.org/x/exp/shiny v0.0.0-20230425010034-47ecfdc1ba53 // indirect
 	golang.org/x/image v0.1.0 // indirect
 	golang.org/x/mobile v0.0.0-20220722155234-aaac322e2105 // indirect
-	golang.org/x/sys v0.0.0-20220818161305-2296e01440c6 // indirect
+	golang.org/x/sys v0.1.0 // indirect
 )
