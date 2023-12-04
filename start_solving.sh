@@ -2,29 +2,17 @@
 YEAR=$1
 DAY=$2
 
-mkdir -p $YEAR'/day'$DAY
+mkdir -p "$YEAR"/day"$DAY"
 
-URL='https://adventofcode.com/'$YEAR'/day/'$DAY
-INPUT_FILE=$YEAR/day$DAY/input.txt
-EXAMPLE_FILE=$YEAR/day$DAY/example_input.txt
-SOLUTION_FILE=$YEAR/day$DAY/day$DAY.go
+URL="https://adventofcode.com/"$YEAR"/day/"$DAY"/input"
+INPUT_FILE="$YEAR"/day"$DAY"/input.txt"
+EXAMPLE_FILE="$YEAR"/day"$DAY"/example_input.txt"
+SOLUTION_FILE="$YEAR"/day"$DAY"/day"$DAY.go"
 
 # Fetch problem input
-max_fails=10
-cur_fails=0
-until $(curl $URL'/input' --config aoc_session --output $INPUT_FILE --silent --fail --retry 10 --retry-delay 5)
-do
-    ((cur_fails++))
-    echo $cur_fails': Not quite yet...'
-    if [ $cur_fails -ge $max_fails ]
-    then
-       echo 'Puzzle not yet released, please be patient.'
-       exit 1
-    fi
-    sleep 5
-done
-
+curl --config aoc_session --output $INPUT_FILE --retry 10 "$URL"/input"
 echo "It's ready, start solving!"
+
 # Copy the template solution file and visualization file
 cp -i template/template.go $SOLUTION_FILE
 # Update the year and day in the templates
@@ -57,6 +45,3 @@ func main() {
 }
 
 " > "./main.go"
-# Open problem page
-"C:/Program Files/Google/Chrome/Application/chrome.exe" $URL
-code -r $SOLUTION_FILE $INPUT_FILE $EXAMPLE_FILE
