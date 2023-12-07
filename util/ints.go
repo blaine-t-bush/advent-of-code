@@ -17,3 +17,14 @@ func IntsProduct(nums []int) int {
 
 	return product
 }
+
+func IntsPow(base int, exponent int) int {
+	if exponent == 0 {
+		return 1
+	}
+	result := base
+	for i := 2; i <= exponent; i++ {
+		result *= base
+	}
+	return result
+}
