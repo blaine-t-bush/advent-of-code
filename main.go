@@ -4,23 +4,23 @@ import (
 	"flag"
 	"fmt"
 
-	day4 "github.com/blaine-t-bush/advent-of-code/2023/day4"
+	day5 "github.com/blaine-t-bush/advent-of-code/2023/day5"
 )
 
 func main() {
 	// parse command line flags to determine appropriate input file
-	var inputFile string = "./2023/day4/input.txt"
+	var inputFile string = "./2023/day5/input.txt"
 	examplePtr := flag.Bool("ex", false, "use example input instead of real input?")
 	flag.Parse()
 
 	if *examplePtr {
-		inputFile = "./2023/day4/input.example.txt"
+		inputFile = "./2023/day5/input.example.txt"
 	}
 
-	res1 := day4.SolvePartOne(inputFile)
-	fmt.Printf("Part I: total %d\n", res1)
+	res1 := day5.SolvePartOne(inputFile)
+	fmt.Printf("Part I: lowest value %d\n", res1)
 
-	res2 := day4.SolvePartTwo(inputFile)
+	res2 := day5.SolvePartTwo(inputFile)
 	fmt.Printf("Part II: total %d\n", res2)
 }
 
